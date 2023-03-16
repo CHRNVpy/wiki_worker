@@ -71,7 +71,7 @@ def check_new_soft(start_url):
                 soft_names.append(soft_name)
                 wiki_response = requests.get(f"https://systemrequirements.wiki/{soft_name.replace(' ', '_')}",
                                              headers=headers)
-                if wiki_response.status_code == 200:
+                if wiki_response.status_code != 200:
                     time.sleep(2)
                     links.append(link)
         info['soft'] = soft_names
@@ -85,7 +85,7 @@ def check_new_soft(start_url):
             soft_names.append(soft_name)
             wiki_response = requests.get(f"https://systemrequirements.wiki/{soft_name.replace(' ', '_')}",
                                          headers=headers)
-            if wiki_response.status_code == 200:
+            if wiki_response.status_code != 200:
                 time.sleep(2)
                 links.append(link)
         info['soft'] = soft_names
