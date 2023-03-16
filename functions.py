@@ -6,8 +6,7 @@ from pprint import pprint
 
 import requests
 from bs4 import BeautifulSoup
-import asyncio
-import aiohttp
+
 
 headers = {
     'Accept': '*/*',
@@ -75,34 +74,28 @@ def check_new_games():
 
 
 def get_soft_categories():
+    print(f'[+] parsing soft categories')
     url = 'https://getintopc.com/all-software-categories/'
     response = requests.get(url=url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     soft_categories = soup.find(class_="vertical-menu").find_all('a')
     cat_name_list = []
     cat_url_list = []
-    with open(f'software_categories_links.csv', 'a') as file:
-        writer = csv.writer(file)
-        for category in soft_categories[1:]:
-            cat_name = category.text.split('(')[0].strip(' ')
-            cat_url = category['href']
-            cat_name_list.append(cat_name)
-            cat_url_list.append(cat_url)
-            writer.writerow([cat_name, cat_url])
+    # with open(f'software_categories_links.csv', 'a') as file:
+    #     writer = csv.writer(file)
+    for category in soft_categories[1:]:
+        cat_name = category.text.split('(')[0].strip(' ')
+        cat_url = category['href']
+        cat_name_list.append(cat_name)
+        cat_url_list.append(cat_url)
     return cat_url_list
 
 
 def get_software_links(start_url):
     links = []
-    #start_url = 'https://getintopc.com/softwares/3d-printing/'
     gen_response = requests.get(url=start_url, headers=headers)
     soup = BeautifulSoup(gen_response.text, 'html.parser')
     title = soup.find(class_="title archive-category").text
-    # path = 'Soft'
-    # if not os.path.exists(path):
-    #     os.makedirs(path)
-    # with open(f'Soft/{title}.csv', 'a') as file:
-    #     writer = csv.writer(file)
     print(f'[+] Parsing {title}')
     if soup.find(class_='page-navi pagination numbers clear-block'):
         pages = soup.find(class_='page-navi pagination numbers clear-block').find_all('a')[-2].text
@@ -116,15 +109,14 @@ def get_software_links(start_url):
                 link = soft.find('a')['href']
                 links.append(link)
                 # writer.writerow([soft_name, link])
-                # print(f'Saving {soft_name}')
+                print(f'Saving {soft_name}')
     else:
         names = soup.find_all('h2')
         for soft in names:
             soft_name = soft.text.strip('Free Download')
             link = soft.find('a')['href']
             links.append(link)
-            # writer.writerow([soft_name, link])
-            # print(f'Saving {soft_name}')
+            print(f'Saving {soft_name}')
     return links
 
 
@@ -137,117 +129,81 @@ def get_game_requirement(url: str):
     title = soup.find(class_="main-panel").find('h1').text
     requirements_dict['title'] = title.split(' System Requirements')[0]
     requirements = soup.find_all(class_="gsr_section")
-    if len(requirements) > 0:
-        minimum_header = requirements[0].find('h2').text
-        if len(requirements[0].find_all(class_="gsr_label")) > 0:
-            param_1 = requirements[0].find_all(class_="gsr_label")[0].text
-            param_1_req = requirements[0].find_all(class_="gsr_text")[0].text
-            minimum_dict[param_1] = param_1_req
-            requirements_dict[minimum_header] = minimum_dict
-        if len(requirements[0].find_all(class_="gsr_label")) > 1:
-            param_2 = requirements[0].find_all(class_="gsr_label")[1].text
-            param_2_req = requirements[0].find_all(class_="gsr_text")[1].text
-            minimum_dict[param_2] = param_2_req
-            requirements_dict[minimum_header] = minimum_dict
-        if len(requirements[0].find_all(class_="gsr_label")) > 2:
-            param_3 = requirements[0].find_all(class_="gsr_label")[2].text
-            param_3_req = requirements[0].find_all(class_="gsr_text")[2].text
-            minimum_dict[param_3] = param_3_req
-            requirements_dict[minimum_header] = minimum_dict
-        if len(requirements[0].find_all(class_="gsr_label")) > 3:
-            param_4 = requirements[0].find_all(class_="gsr_label")[3].text
-            param_4_req = requirements[0].find_all(class_="gsr_text")[3].text
-            minimum_dict[param_4] = param_4_req
-            requirements_dict[minimum_header] = minimum_dict
-        if len(requirements[0].find_all(class_="gsr_label")) > 4:
-            param_5 = requirements[0].find_all(class_="gsr_label")[4].text
-            param_5_req = requirements[0].find_all(class_="gsr_text")[4].text
-            minimum_dict[param_5] = param_5_req
-            requirements_dict[minimum_header] = minimum_dict
-        if len(requirements[0].find_all(class_="gsr_label")) > 5:
-            param_6 = requirements[0].find_all(class_="gsr_label")[5].text
-            param_6_req = requirements[0].find_all(class_="gsr_text")[5].text
-            minimum_dict[param_6] = param_6_req
-            requirements_dict[minimum_header] = minimum_dict
-        if len(requirements[0].find_all(class_="gsr_label")) > 6:
-            param_7 = requirements[0].find_all(class_="gsr_label")[6].text
-            param_7_req = requirements[0].find_all(class_="gsr_text")[6].text
-            minimum_dict[param_7] = param_7_req
-            requirements_dict[minimum_header] = minimum_dict
-
-    if len(requirements) > 1:
-        try:
-            recommend_header = requirements[1].find('h2').text
-            if len(requirements[1].find_all(class_="gsr_label")) > 0:
-                rec_param_1 = requirements[1].find_all(class_="gsr_label")[0].text
-                rec_param_1_req = requirements[1].find_all(class_="gsr_text")[0].text
-                recommend_dict[rec_param_1] = rec_param_1_req
-            if len(requirements[1].find_all(class_="gsr_label")) > 1:
-                rec_param_2 = requirements[1].find_all(class_="gsr_label")[1].text
-                rec_param_2_req = requirements[1].find_all(class_="gsr_text")[1].text
-                recommend_dict[rec_param_2] = rec_param_2_req
-            if len(requirements[1].find_all(class_="gsr_label")) > 2:
-                rec_param_3 = requirements[1].find_all(class_="gsr_label")[2].text
-                rec_param_3_req = requirements[1].find_all(class_="gsr_text")[2].text
-                recommend_dict[rec_param_3] = rec_param_3_req
-            if len(requirements[1].find_all(class_="gsr_label")) > 3:
-                rec_param_4 = requirements[1].find_all(class_="gsr_label")[3].text
-                rec_param_4_req = requirements[1].find_all(class_="gsr_text")[3].text
-                recommend_dict[rec_param_4] = rec_param_4_req
-            if len(requirements[1].find_all(class_="gsr_label")) > 4:
-                rec_param_5 = requirements[1].find_all(class_="gsr_label")[4].text
-                rec_param_5_req = requirements[1].find_all(class_="gsr_text")[4].text
-                recommend_dict[rec_param_5] = rec_param_5_req
-                requirements_dict[recommend_header] = recommend_dict
-            if len(requirements[1].find_all(class_="gsr_label")) > 5:
-                rec_param_6 = requirements[1].find_all(class_="gsr_label")[5].text
-                rec_param_6_req = requirements[1].find_all(class_="gsr_text")[5].text
-                recommend_dict[rec_param_6] = rec_param_6_req
-                requirements_dict[recommend_header] = recommend_dict
-            if len(requirements[1].find_all(class_="gsr_text")) > 6:
-                rec_param_7 = requirements[1].find_all(class_="gsr_label")[6].text
-                rec_param_7_req = requirements[1].find_all(class_="gsr_text")[6].text
-                recommend_dict[rec_param_7] = rec_param_7_req
-                requirements_dict[recommend_header] = recommend_dict
-        except AttributeError:
-            recommend_header = requirements[1].find_all(class_="gsr_text")[0].text
-            requirements_dict[recommend_header.split(':')[0]] = recommend_header.split(':')[1]
-    if len(requirements) > 2:
-        note = requirements[2].find(class_="gsr_text").text
-        requirements_dict['note'] = note
+    for index, section in enumerate(requirements):
+        if index == 0 and len(section) > 1:
+            min_header = requirements[index].find('h2').text
+            rows = section.find_all(class_="gsr_row")
+            for i in rows:
+                param_name = i.find(class_="gsr_label").text
+                param = i.find(class_="gsr_text").text.strip('\r\n')
+                minimum_dict[param_name] = param
+            requirements_dict[min_header] = minimum_dict
+        elif index == 1:
+            if len(section) > 1:
+                rec_header = requirements[index].find('h2').text
+                rows = section.find_all(class_="gsr_row")
+                for i in rows:
+                    param_name = i.find(class_="gsr_label").text
+                    param = i.find(class_="gsr_text").text
+                    recommend_dict[param_name] = param
+                requirements_dict[rec_header] = recommend_dict
+            elif len(section.find_all('br')) > 0:
+                big_note = '\n'.join([sec.text for sec in section])
+                requirements_dict['NOTE'] = big_note
+            else:
+                try:
+                    param_name = section.find(class_="gsr_text").text.split(':')[0]
+                    param = '\n'.join([sec for sec in section.find(class_="gsr_text").text.split(':')[1:]])
+                    requirements_dict[param_name] = param
+                except AttributeError:
+                    rec_header = requirements[index].find('h2').text
+                    requirements_dict[rec_header] = ''
+        elif index == 2 and len(section) > 0:
+            if len(section.find_all('br')) > 1:
+                big_note = '\n'.join([sec.text for sec in section])
+                requirements_dict['NOTE'] = big_note
+            else:
+                param_name = section.find(class_="gsr_text").text.split(':')[0]
+                param = section.find(class_="gsr_text").text.split(':')[1]
+                requirements_dict[param_name] = param
+        elif index == 3 and len(section) > 0:
+            if len(section.find_all('br')) > 0:
+                big_note = '\n'.join([sec.text for sec in section])
+                requirements_dict['NOTE'] = big_note
+            else:
+                param_name = section.find(class_="gsr_text").text.split(':')[0]
+                param = section.find(class_="gsr_text").text.split(':')[1]
+                requirements_dict[param_name] = param
     return requirements_dict
 
 
 def get_soft_requirement(url: str):
     response = requests.get(url, headers=headers)
-
-    soup = BeautifulSoup(response.text, 'html.parser')
-    block = soup.find_all('h2')
     info = {}
-    soft_requirement = {}
-    for index, i in enumerate(block):
-        if block[index].text.lower().split(' for')[0] == 'system requirements':
-            sys_req_block = block[index].text.lower().split(' for')
-            header = sys_req_block[0].capitalize()
-            if len(sys_req_block) > 1:
-                soft_name = sys_req_block[1].strip(' ').capitalize()
-                info['title'] = soft_name
-            else:
-                soft_name = soup.find('h1').text.lower().split(' free download')[0].capitalize()
-                info['title'] = soft_name
-            reqs = block[index].findNext('ul').find_all('li')
-            params = {}
-            params_list = []
-            for ind, j in enumerate(reqs):
-                parameter = reqs[ind].text
-                if len(parameter.split(':')) > 1:
-                    param_name = parameter.split(':')[0]
-                    param_param = parameter.split(':')[1].strip()
-                    params[param_name] = param_param
-                else:
-                    params['*'] = parameter
-            params_list.append(params)
-            info[header] = params_list
+    soup = BeautifulSoup(response.text, 'html.parser')
+    title = soup.find(class_="title").text.split(' Free Download')[0]
+    info['title'] = title
+    block = soup.find_all('h2')
+    tags = []
+    for h2 in block:
+        if 'system requirements' in h2.text.lower():
+            start_h2 = soup.find('h2', string=h2.text)
+            while start_h2.findNextSibling() != start_h2.findNext('h2'):
+                tags.append(start_h2.findNextSibling())
+                start_h2 = start_h2.findNextSibling()
+    p_list = []
+    li_list = []
+    for tag in tags:
+        if tag.name == 'p':
+            p_list.append(tag.text)
+        if tag.name == 'ul':
+            for li in tag:
+                li_list.append(li.text)
+    if len(p_list) > 0:
+        p_list.pop(0)
+    info['p'] = p_list
+    info['li'] = li_list
+    print(info)
     return info
 
 
@@ -273,16 +229,18 @@ def req_json_maker(path='Games', destination='Games_processed', function=get_gam
         print(f'{file.split(".")[0]} done')
 
 
-#def main():
+
+def main():
     # data = get_soft_categories()
     # for i in data[15:]:
     #     get_software(i)
     #     time.sleep(3)
-    # pprint(get_game_requirement('https://gamesystemrequirements.com/game/shootmania-storm'))
-    #req_json_maker('Soft', 'Soft_processed', get_soft_requirement)
-    #print(get_soft_requirement('https://getintopc.com/softwares/video-editing/vsdc-video-editor-for-windows-free-download/'))
-    #check_new_games()
+    #pprint(get_game_requirement('https://gamesystemrequirements.com/game/fear-combat'))
+    # req_json_maker('Soft', 'Soft_processed', get_soft_requirement)
+    get_soft_requirement('https://getintopc.com/softwares/dwkit-core-ultimate-free-download/')
+    # check_new_games()
 
 
-# if __name__ == '__main__':
-#     main()
+
+if __name__ == '__main__':
+    main()
