@@ -130,14 +130,18 @@ def get_game_requirement(url: str):
     requirements_dict['title'] = title.split(' System Requirements')[0]
     requirements = soup.find_all(class_="gsr_section")
     for index, section in enumerate(requirements):
-        if index == 0 and len(section) > 1:
-            min_header = requirements[index].find('h2').text
-            rows = section.find_all(class_="gsr_row")
-            for i in rows:
-                param_name = i.find(class_="gsr_label").text
-                param = i.find(class_="gsr_text").text.strip('\r\n')
-                minimum_dict[param_name] = param
-            requirements_dict[min_header] = minimum_dict
+        if index == 0:
+            if len(section) > 1:
+                min_header = requirements[index].find('h2').text
+                rows = section.find_all(class_="gsr_row")
+                for i in rows:
+                    param_name = i.find(class_="gsr_label").text
+                    param = i.find(class_="gsr_text").text.strip('\r\n')
+                    minimum_dict[param_name] = param
+                requirements_dict[min_header] = minimum_dict
+            else:
+                min_header = requirements[index].find('h2').text
+                requirements_dict[min_header] = {}
         elif index == 1:
             if len(section) > 1:
                 rec_header = requirements[index].find('h2').text
@@ -181,13 +185,14 @@ def get_soft_requirement(url: str):
     response = requests.get(url, headers=headers)
     info = {}
     soup = BeautifulSoup(response.text, 'html.parser')
-    title = soup.find(class_="title").text.split(' Free Download')[0]
-    info['title'] = title
+    title = soup.find(class_="title").text.split(' Free')[0]
+    title = title.replace('[', '(').replace(']', ')').replace('Download', '').replace('Portable', '').replace\
+        ('+', '').replace('Free Download', '').replace('Free', '').strip()
     block = soup.find_all('h2')
     tags = []
     for h2 in block:
         if 'system requirements' in h2.text.lower():
-            start_h2 = soup.find('h2', string=h2.text)
+            start_h2 = h2
             while start_h2.findNextSibling() != start_h2.findNext('h2'):
                 tags.append(start_h2.findNextSibling())
                 start_h2 = start_h2.findNextSibling()
@@ -196,14 +201,26 @@ def get_soft_requirement(url: str):
     for tag in tags:
         if tag.name == 'p':
             p_list.append(tag.text)
-        if tag.name == 'ul':
+        elif tag.name == 'ul':
             for li in tag:
                 li_list.append(li.text)
-    if len(p_list) > 0:
+    if len(p_list) > 1:
+        try:
+            p_list[0] = p_list[0].split('PC meets minimum system requirements')[1].strip('.')[1:]
+        except IndexError:
+            p_list = []
+    elif len(p_list) == 1:
         p_list.pop(0)
     info['p'] = p_list
     info['li'] = li_list
-    print(info)
+    if 'Mac' in title:
+        info['OS'] = 'macOS'
+        info['title'] = title.replace('for Mac OS', '').replace('for Mac OS X', '').replace('For Mac OS', '').replace\
+            ('Mac OSX', '').replace('Mac OS X', '').replace('for Mac', '').replace('For Mac', '').strip()
+    else:
+        info['OS'] = 'Windows'
+        info['title'] = title
+    #print(info)
     return info
 
 
@@ -212,7 +229,7 @@ def req_json_maker(path='Games', destination='Games_processed', function=get_gam
     # destination = 'Games_processed'
     file_list = os.listdir(path)
     for file in file_list:
-        print(f'{file} processing')
+        print(f'[+] {file} processing')
         req_list = []
         with open(f'{path}/{file}', 'r') as f:
             data = csv.reader(f)
@@ -220,27 +237,27 @@ def req_json_maker(path='Games', destination='Games_processed', function=get_gam
                 url = link[1]
                 req_list.append(function(url))
                 #time.sleep(3)
-                print(f'Game/Soft: {link[0]} processed')
+                print(f'[+] Game/Soft: {link[0]} processed')
         if not os.path.exists(destination):
             os.makedirs(destination)
         with open(f'{destination}/{file.split(".")[0]}.json', 'w', encoding='utf-8') as j:
             json.dump(req_list, j, indent=4, ensure_ascii=False)
         os.rename(f'{path}/{file}', f'{destination}/{file}')
-        print(f'{file.split(".")[0]} done')
+        print(f'[+] {file.split(".")[0]} done')
 
 
 
-def main():
+# def main():
     # data = get_soft_categories()
     # for i in data[15:]:
     #     get_software(i)
     #     time.sleep(3)
-    #pprint(get_game_requirement('https://gamesystemrequirements.com/game/fear-combat'))
+    # pprint(get_game_requirement('https://gamesystemrequirements.com/game/unreal-gold'))
     # req_json_maker('Soft', 'Soft_processed', get_soft_requirement)
-    get_soft_requirement('https://getintopc.com/softwares/dwkit-core-ultimate-free-download/')
+    # pprint(get_soft_requirement('https://getintopc.com/softwares/3d-cad/autocad-plant-3d-2015-free-download-3279392/'))
     # check_new_games()
 
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()

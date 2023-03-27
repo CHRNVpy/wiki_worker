@@ -6,7 +6,7 @@ from functions import get_game_requirement, get_soft_requirement
 def games_template(data):
     """ This function making templates for games """
     dict_keys = [i for i in data.keys()]
-    print(dict_keys)
+    #print(dict_keys)
 
     if len(dict_keys) > 4:
         if type(data.get(dict_keys[1])) != str:
@@ -49,7 +49,7 @@ def games_template(data):
                        f'{header}' \
                        f'{body}\n' \
                        f'=== Additional details ===\n' \
-                       f'{note}\n' \
+                       f'{note}\n\n' \
                        f'{note2}'
             return template
     elif len(dict_keys) > 2:
@@ -84,7 +84,7 @@ def games_template(data):
     elif len(dict_keys) > 1:
         body = '\n\n'.join([f"'''{key}''' {value}" for key, value in data.get(dict_keys[1]).items()])
         template = f'== Windows ==\n' \
-                   f'{dict_keys[1]}\n' \
+                   f'=== {dict_keys[1]} ===\n\n' \
                    f'{body}'
         return template
     else:
@@ -94,7 +94,7 @@ def games_template(data):
 
 def soft_template(data):
     """ This function making templates for soft """
-
+    print(f'getting template for {data.get("title")}')
     if len(data.get('p')) > 0 and len(data.get('li')) > 0:
         new_list_p = []
         for p in data.get('p'):
@@ -112,14 +112,14 @@ def soft_template(data):
             else:
                 new_list_li.append(li)
         li = '\n\n'.join([el.strip() for el in new_list_li])
-        template = f'== Windows ==\n' \
+        template = f'== {data.get("OS")} ==\n' \
                    f'=== Minimum system requirements ===' \
                    f'{p}\n\n' \
                    f'{li}'
         return template
     elif len(data.get('p')) == 1:
         p = data.get('p')
-        template = f'== Windows ==\n' \
+        template = f'== {data.get("OS")} ==\n' \
                    f'=== Minimum system requirements ===\n' \
                    f'{p}'
         return template
@@ -132,7 +132,7 @@ def soft_template(data):
             else:
                 new_list.append(p)
         p = '\n\n'.join([el.strip() for el in new_list])
-        template = f'== Windows ==\n' \
+        template = f'== {data.get("OS")} ==\n' \
                    f'=== Minimum system requirements ===\n' \
                    f"{p}"
         return template
@@ -145,15 +145,18 @@ def soft_template(data):
             else:
                 new_list.append(li)
         li = '\n\n'.join([el.strip() for el in new_list])
-        template = f'== Windows ==\n' \
+        template = f'== {data.get("OS")} ==\n' \
                    f'=== Minimum system requirements ===\n' \
                    f'{li}'
+        return template
+    else:
+        template = f'== {data.get("OS")} ==\n'
         return template
 
 
 
-# data = get_game_requirement('https://gamesystemrequirements.com/game/fear-combat')
+# data = get_game_requirement('https://gamesystemrequirements.com/game/unreal-gold')
 # print(games_template(data))
 
-# data = get_soft_requirement('https://getintopc.com/softwares/3d-analysis/mentor-graphics-hyperlynx-vx-2020-free-download/')
+# data = get_soft_requirement('https://getintopc.com/softwares/3d-designing/coohom-visualize-your-dream-and-realize-your-imagination/')
 # print(soft_template(data))
